@@ -21,6 +21,10 @@ class NuovaPrenotazione extends StatefulWidget{
 
 }
 
+enum StatoPrenotazione{
+  inserimento, elaborazione, riepilogo;
+}
+
 class _NuovaPrenotazioneState extends State<NuovaPrenotazione>{
 
   TextEditingController _controllerCF = TextEditingController();
@@ -33,6 +37,7 @@ class _NuovaPrenotazioneState extends State<NuovaPrenotazione>{
   List<DropdownMenuItem<String>> itemsPrestazioni = [];
   Prenotazione? _prenotazione;
   Text alert = Text("");
+  StatoPrenotazione _stato = StatoPrenotazione.inserimento;
 
   @override
   void initState(){
@@ -55,7 +60,11 @@ class _NuovaPrenotazioneState extends State<NuovaPrenotazione>{
               ),
             ),
             Center(
-              child: _prenotazione == null?formPrenotazione():riepilogoPrenotazione(),
+              child: _stato == StatoPrenotazione.inserimento?
+                        formPrenotazione():
+                     _stato == StatoPrenotazione.riepilogo?
+                        riepilogoPrenotazione():
+                         const Center(child: SizedBox(width: 50,height: 50,child: CircularProgressIndicator(),),)
             )
           ],
         )
@@ -63,11 +72,12 @@ class _NuovaPrenotazioneState extends State<NuovaPrenotazione>{
   }
 
   void prenota() async{
+    setState(()=> _stato = StatoPrenotazione.elaborazione);
     var rnd = Random();
     int ore = 8 + rnd.nextInt(17);
-    int m = rnd.nextInt(1);
+    int m = rnd.nextInt(10);
     String ora = ore.toString()+":";
-    if( m == 0)
+    if( m <= 5)
       ora+="00:00";
     else
       ora+="30:00";
@@ -85,7 +95,10 @@ class _NuovaPrenotazioneState extends State<NuovaPrenotazione>{
               style: TextStyle(color: Colors.red),);
     }
     String res = await Model.sharedInstance.prenota(p);
-    setState(()=> _prenotazione = Prenotazione.fromJson(jsonDecode(res)));
+    setState((){
+      _prenotazione = Prenotazione.fromJson(jsonDecode(res));
+      _stato = StatoPrenotazione.riepilogo;
+    });
 
   }
 
@@ -170,6 +183,7 @@ class _NuovaPrenotazioneState extends State<NuovaPrenotazione>{
 
   void okButton(){
     setState((){
+      _stato = StatoPrenotazione.inserimento;
       _prenotazione = null;
       _controllerData.clear();
       _controllerCF.clear();

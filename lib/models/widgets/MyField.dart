@@ -13,7 +13,7 @@ class MyField extends StatelessWidget{
   Widget build(BuildContext context) {
     return
       Container(
-        height: 75,
+        height: 50,
         width: 200,
         alignment: Alignment.center,
         decoration: const ShapeDecoration(

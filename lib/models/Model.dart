@@ -8,6 +8,8 @@ import 'package:frontend_progetto_piattaforme/models/AuthenticationData.dart';
 import 'package:frontend_progetto_piattaforme/models/Constants.dart';
 import 'package:frontend_progetto_piattaforme/models/LogInResult.dart';
 
+import 'Objects/User.dart';
+
 class Model{
   static Model sharedInstance = Model();
 
@@ -117,5 +119,13 @@ class Model{
 
   Future<String> getPrenotazioneById(Map<String,String> params) async{
     return await _restManager.makeGetRequest(Constants.ADDRESS_STORE_SERVER, "/prenotazione", params);
+  }
+
+  Future<String> registraUtente(User u) async{
+    return await _restManager.makePostRequest(Constants.ADDRESS_STORE_SERVER, "/registrazione", u);
+  }
+
+  Future<String> delete(int id) async{
+    return await _restManager.makeGetRequest(Constants.ADDRESS_STORE_SERVER, "/delete", {"id":id.toString()});
   }
 }

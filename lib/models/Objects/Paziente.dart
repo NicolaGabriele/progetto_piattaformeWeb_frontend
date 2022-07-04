@@ -11,7 +11,7 @@ class Paziente{
       codiceFiscale: json['codiceFiscale'],
       nome: json['nome'],
       cognome: json['cognome'],
-      dataNascita: json['dataNascita']
+      dataNascita: json['dataNascita']!=null?DateTime.fromMillisecondsSinceEpoch(json['dataNascita']).toString():json['dataNascita']
     );
   }
 

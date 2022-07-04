@@ -3,19 +3,28 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:frontend_progetto_piattaforme/models/widgets/MyField.dart';
-
+import 'package:frontend_progetto_piattaforme/models/widgets/PrenotazioneItem.dart';
 import '../Model.dart';
 import '../Objects/Prenotazione.dart';
 
 class CercaPrenotazione extends StatefulWidget{
 
+  _CercaPrenotazioneState stato = _CercaPrenotazioneState();
   @override
-  State<StatefulWidget> createState() => _CercaPrenotazioneState();
+  State<StatefulWidget> createState(){
+    stato.setPage(this);
+    return stato;
+  }
+
+  void refresh(int id){
+    //stato.setPage(this);
+    stato.refresh(id);
+  }
 
 }
 
 enum _StatoRicerca {
-  CERCANDO, NESSUN_RISULTATO, RISULTATI
+  CERCANDO, NESSUN_RISULTATO, RISULTATI, CARICAMENTO
 }
 
   class _CercaPrenotazioneState extends State<CercaPrenotazione>{
@@ -25,7 +34,11 @@ enum _StatoRicerca {
   List<Prenotazione> prenotazioni = [];
   _StatoRicerca stato = _StatoRicerca.CERCANDO;
   ScrollController _scrollController = ScrollController();
+  CercaPrenotazione? cercaPrenotazione;
 
+  void setPage(CercaPrenotazione c){
+    this.cercaPrenotazione = c;
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,7 +57,9 @@ enum _StatoRicerca {
                   formDiRicerca():
                   stato == _StatoRicerca.RISULTATI?
                       viewRisultati():
-                      nessunRisultatoView(),
+                      stato == _StatoRicerca.NESSUN_RISULTATO?
+                        nessunRisultatoView():
+                          const Center(child: SizedBox(width: 50,height: 50,child: CircularProgressIndicator(),),)
             )
           ],
         )
@@ -87,13 +102,15 @@ enum _StatoRicerca {
     );
   }
 
-  void cerca(){
+  void cerca()async{
+    setState(()=> stato = _StatoRicerca.CARICAMENTO);
+    await Future.delayed(const Duration(milliseconds: 1500));
     String id = _controllerID.text;
     RegExp r = RegExp(r'(\d+)');
     var match = r.firstMatch(id);
-    if(match == null)
+    if(match == null) {
       ricercaPerCf(_controllerCF.text);
-    else {
+    } else {
       int sid = int.parse(id.substring(match.start, match.end));
       ricercaPerId(sid);
     }
@@ -101,13 +118,14 @@ enum _StatoRicerca {
 
   void ricercaPerId(int id){
     Model.sharedInstance.getPrenotazioneById({"id":id.toString()}).then((value){
-      if(value.compareTo("nessun risultato") == 0)
+      if(value.compareTo("nessun risultato") == 0) {
         nessunRisultato();
-      else
+      } else {
         setState((){
           prenotazioni = [Prenotazione.fromJson(jsonDecode(value))];
           stato = _StatoRicerca.RISULTATI;
         });
+      }
     });
   }
 
@@ -199,9 +217,9 @@ enum _StatoRicerca {
               child: Row(
                 children: [
                   getTestoFormattato("ID"),
-                  getTestoFormattato("  PRESTAZIONE"),
-                  getTestoFormattato("       DATA"),
-                  getTestoFormattato("       ORA")
+                  getTestoFormattato("   PRESTAZIONE"),
+                  getTestoFormattato("         DATA"),
+                  getTestoFormattato("         ORA")
                 ],
               ),
             ),
@@ -216,13 +234,11 @@ enum _StatoRicerca {
                       controller: _scrollController,
                       itemCount: prenotazioni.length,
                       itemBuilder: (BuildContext context, int index){
-                        return Row(
-                          children: [
-                            getTestoFormattato(prenotazioni[index].id.toString()),
-                            getTestoFormattato(prenotazioni[index].prestazione.descrizione.toString()),
-                            getTestoFormattato(prenotazioni[index].data.toString()),
-                            getTestoFormattato(prenotazioni[index].ora.toString())
-                          ],
+                        return PrenotazioneItem(id: prenotazioni[index].id.toString(),
+                                                prestazione: prenotazioni[index].prestazione.descrizione.toString(),
+                                                data: prenotazioni[index].data.toString(),
+                                                ora: prenotazioni[index].ora.toString(),
+                                                page: cercaPrenotazione,
                         );
                       }
                   )
@@ -251,16 +267,26 @@ enum _StatoRicerca {
     return Padding(
       padding: EdgeInsets.all(10),
       child: Text(
-        text,
-        style:
+          text,
+          style:
           const TextStyle(
-            fontSize: 15,
-            fontStyle: FontStyle.italic
+              fontSize: 15,
+              fontStyle: FontStyle.italic
           )
       ),
     );
   }
 
+  void refresh(int id){
+    setState((){
+      for(int i = 0; i < prenotazioni.length; i++){
+        if(prenotazioni[i].id == id) {
+          prenotazioni.remove(prenotazioni[i]);
+          break;
+        }
+      }
+    });
+  }
 }
 
 
